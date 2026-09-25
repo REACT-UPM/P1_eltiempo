@@ -7,14 +7,16 @@ import App from '../../src/App';
 import Header from '../../src/Header';
 import Resultados from '../../src/Resultados';
 import user_info from '../../user.json';
-import {mock1} from '../utils/mock';
 import {mock3} from '../utils/mock3';
 
 const mytestconfig = {
   server_url: "http://api.weatherapi.com/v1/forecast.json",
   api_key: "apikeyfake_nohacefaltaporquehagomockdefetch",
-  num_items_query: 8,
-  num_items_show: 7,
+  //num_items_query ya no existe: la app fija days=3 porque el plan gratuito de weatherapi
+  //no devuelve más de 3 días. num_items_show baja a 2 para que siga habiendo recorte real.
+  num_items_show: 2,
+  tile_server_url: "https://tiles.servidordeprueba.test",
+  tile_zoom: 12,
   default_lat: 41.416775,
   default_lon: -4.703790,
   use_server: false,
@@ -33,7 +35,7 @@ afterAll(() => jest.resetAllMocks());
 
 let testinfo = {
     name: "La aplicación tiene un componente Header con el logo y el mensaje de bienvenida con tu nombre",
-    score: 1,
+    score: 0.5,
     msg_ok: "Header encontrada",
     msg_error: "Header no encontrada o no es como se esperaba, revise el enunciado"
 }
@@ -92,7 +94,7 @@ test(JSON.stringify(testinfo), () => {
 
 testinfo = {
   name: "Los input latitud y longitud cambian cuando el usuario escribe en ellos",
-  score: 1,
+  score: 0.5,
   msg_ok: "Campos latitud y longitud cambian adecuadamente",
   msg_error: "Campos latitud y longitud NO cambian adecuadamente con los valores que introduce el usuario"
 }
@@ -110,21 +112,22 @@ test(JSON.stringify(testinfo), () => {
 
 testinfo = {
   name: "El componente 'Resultados' recibe dos atributos (props) 'numitems' que indica cuantas tarjetas debe mostrar y 'datos' con los datos que debe renderizar",
-  score: 2,
+  score: 1.5,
   msg_ok: "Componente Resultados funciona adecuadamente",
   msg_error: "Componente Resultadoss NO funciona correctamente"
 }
 test(JSON.stringify(testinfo), async () => {
-  render(<Resultados numitems={6} datos={mock3} />);
+  //mock3 tiene 8 días y se piden 2, así que se sigue comprobando que el alumno recorta
+  render(<Resultados numitems={2} datos={mock3} />);
   const resultado = document.querySelector('#resultados');
-  expect(resultado).toBeInTheDocument();  
+  expect(resultado).toBeInTheDocument();
   expect(resultado).toHaveTextContent(/El tiempo/i);
   expect(resultado).toHaveTextContent(/Langenzenn/);
   expect(resultado).toHaveTextContent(/Europe\/Berlin/);
   expect(resultado).toHaveTextContent("23/9/2024");
-  expect(resultado).toHaveTextContent("28/9/2024");
+  expect(resultado).toHaveTextContent("24/9/2024");
   const imagenes = document.querySelectorAll('.tiempoimg');
-  expect(imagenes).toHaveLength(6);
+  expect(imagenes).toHaveLength(2);
 });
 
 
@@ -139,15 +142,39 @@ test(JSON.stringify(testinfo), async () => {
   const buscar = document.querySelector('#buscar');
   fireEvent.click(buscar);
   //espero a que cargue los resultados, para ello uso scren.getAllByText que devuelve una promesa
-  await waitFor(() => screen.getAllByText(/2024/i));
+  //mock.js se regeneró con datos reales de weatherapi (3 días, capturados en 2026)
+  await waitFor(() => screen.getAllByText(/2026/i));
   const resultado = document.querySelector('#resultados');
   expect(resultado).toBeInTheDocument();
   expect(resultado).toHaveTextContent(/El tiempo/i);
   expect(resultado).toHaveTextContent(/Lemsid/);
   expect(resultado).toHaveTextContent(/Africa\/El_Aaiun/);
-  expect(resultado).toHaveTextContent("23/9/2024");
-  expect(resultado).toHaveTextContent("29/9/2024");
+  expect(resultado).toHaveTextContent("25/9/2026");
+  expect(resultado).toHaveTextContent("26/9/2026");
   const imagenes = document.querySelectorAll('.tiempoimg');
   expect(imagenes).toHaveLength(mytestconfig.num_items_show);
 });
 
+
+testinfo = {
+  name: "Si en la configuración se indica que no se use el servidor, el tile de OSM se carga del mock local en vez de descargarse",
+  score: 0.5,
+  msg_ok: "El tile de OSM usa el mock local adecuadamente",
+  msg_error: "El tile de OSM NO usa el mock local cuando use_server es false"
+}
+test(JSON.stringify(testinfo), async () => {
+  render(<App />);
+  const check = document.querySelector('#descargartile');
+  const buscar = document.querySelector('#buscar');
+  expect(check).toBeInTheDocument();
+
+  fireEvent.click(check);
+  fireEvent.click(buscar);
+  await waitFor(() => document.querySelector('#tileosm'), {timeout: 5000});
+
+  const imagen = document.querySelector('#tileosm img');
+  expect(imagen).toBeInTheDocument();
+  //con use_server a false no se debe apuntar al servidor de tiles, sino a la imagen local
+  expect(imagen.getAttribute('src')).not.toMatch(mytestconfig.tile_server_url);
+  expect(imagen.getAttribute('src')).toMatch(/mocktile/i);
+});
