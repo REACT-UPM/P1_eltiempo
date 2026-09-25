@@ -1,8 +1,8 @@
 const CONFIG = {
-  server_url: "<SERVER_URL>",
+  server_url: "https://api.weatherapi.com/v1/forecast.json",
   api_key: "<YOUR_API_KEY>",
   //num_items_show: dias que muestra la app. Solo puede valer 1, 2 o 3, porque el plan
-  //gratuito de weatherapi devuelve 3 dias como maximo (ver DIAS_PREVISION en App.jsx).
+  //gratuito de weatherapi devuelve 3 dias como maximo
   num_items_show: 2,
   //tile_server_url y tile_zoom para componer la URL del tile de OpenStreetMap. La política de uso
   //de OSM pide expresamente NO cablear la URL en el código, sino poder cambiarla por configuración.
