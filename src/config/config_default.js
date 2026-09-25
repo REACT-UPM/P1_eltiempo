@@ -4,8 +4,7 @@ const CONFIG = {
   api_key: "<YOUR_API_KEY>",
   default_lat: 40.416775,
   default_lon: -3.703790,
-  num_items_query: 8,
-  num_items_show: 6,  
+  num_items_show: 2,  
   force_error: false  
 }
 
